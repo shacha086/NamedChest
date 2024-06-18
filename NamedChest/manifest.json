@@ -1,0 +1,10 @@
+{
+  "Name": "NamedChest",
+  "Author": "shacha",
+  "Version": "1.0.0",
+  "UniqueID": "shacha.NamedChest",
+  "Description": "",
+  "EntryDll": "NamedChest.dll",
+  "MinimumApiVersion": "4.0.0",
+  "UpdateKeys": []
+}
