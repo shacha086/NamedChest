@@ -15,7 +15,6 @@ public class ModEntry : Mod
     private readonly PerScreen<Chest?> _currentChest = new();
 
     private bool _isOnHostComputer;
-    private const string SaveKey = "shacha.NamedChest";
 
     public override void Entry(IModHelper helper)
     {
