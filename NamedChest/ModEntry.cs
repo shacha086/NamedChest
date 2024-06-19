@@ -47,10 +47,10 @@ public class ModEntry : Mod
         var x = itemGrabMenu.chestColorPicker.xPositionOnScreen + itemGrabMenu.chestColorPicker.width +
                 IClickableMenu.borderWidth / 2;
         var y = itemGrabMenu.chestColorPicker.yPositionOnScreen + 16;
-
         var mousePosition = Game1.getMousePosition();
-        var rect = ItemRegistry.GetData(chestForShow.QualifiedItemId).GetSourceRect();
-        rect.Offset(x, y);
+        var (width, height) =
+            ItemRegistry.GetData(chestForShow.QualifiedItemId).GetSourceRect().Size;
+        var rect = new Rectangle(x, y - 32, width * 4, height * 4 - 32);
         if (rect.Contains(mousePosition))
         {
             IClickableMenu.drawHoverText(Game1.spriteBatch, "更改名称", Game1.smallFont);
