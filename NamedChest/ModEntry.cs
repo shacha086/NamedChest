@@ -22,7 +22,6 @@ public class ModEntry : Mod
         helper.Events.Display.RenderingHud += DisplayOnRenderingHud;
         helper.Events.Display.RenderedActiveMenu += DisplayOnRenderedActiveMenu;
         helper.Events.GameLoop.SaveLoaded += GameLoopOnSaveLoaded;
-        helper.ConsoleCommands.Add("dbg", "", OnDebugCommand);
     }
 
     private void DisplayOnRenderedActiveMenu(object? sender, RenderedActiveMenuEventArgs e)
@@ -130,11 +129,6 @@ public class ModEntry : Mod
                 overrideY: overrideY
             );
         }
-    }
-
-    private void OnDebugCommand(string name, string[] args)
-    {
-
     }
 
     private void GameLoopOnUpdateTicked(object? sender, UpdateTickedEventArgs e)
