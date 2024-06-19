@@ -15,7 +15,6 @@ public class ModEntry : Mod
     private readonly PerScreen<Chest?> _currentChest = new();
 
     private bool _isOnHostComputer;
-    private NamesData? _namesData;
     private const string SaveKey = "shacha.NamedChest";
 
     public override void Entry(IModHelper helper)
@@ -29,6 +28,10 @@ public class ModEntry : Mod
 
     private void DisplayOnRenderedActiveMenu(object? sender, RenderedActiveMenuEventArgs e)
     {
+        if (!_isOnHostComputer)
+        {
+            return;
+        }
         if (Game1.activeClickableMenu is not ItemGrabMenu itemGrabMenu)
         {
             return;
@@ -39,30 +42,57 @@ public class ModEntry : Mod
             return;
         }
 
+        var sourceChest = (Chest) itemGrabMenu.sourceItem;
+
         if (itemGrabMenu.chestColorPicker.itemToDrawColored is not Chest chestForShow)
         {
             return;
         }
 
-        var x = itemGrabMenu.chestColorPicker.xPositionOnScreen + itemGrabMenu.chestColorPicker.width +
+        if (!chestForShow.playerChest.Value)
+        {
+            return;
+        }
+
+        var chestColorPicker = itemGrabMenu.chestColorPicker;
+        
+        if (!Game1.player.showChestColorPicker)
+        {
+            chestForShow.draw(Game1.spriteBatch, chestColorPicker.xPositionOnScreen + chestColorPicker.width + IClickableMenu.borderWidth / 2, chestColorPicker.yPositionOnScreen + 16, local: true);
+        }
+
+        if (!IsTouchedChest(chestColorPicker, chestForShow))
+        {
+            return;
+        }
+        
+        IClickableMenu.drawHoverText(Game1.spriteBatch, "更改名称", Game1.smallFont);
+        
+        if (Helper.Input.GetState(SButton.MouseLeft) == SButtonState.Released)
+        {
+            Game1.activeClickableMenu = new CancelableNamingMenu(answer =>
+            {
+                SaveName(sourceChest, answer);
+                Game1.exitActiveMenu();
+            }, "更改名称", ReadName(sourceChest));
+        }
+    }
+
+    private static bool IsTouchedChest(IClickableMenu chestColorPicker, ISalable chestForShow)
+    {
+        var x = chestColorPicker.xPositionOnScreen + chestColorPicker.width +
                 IClickableMenu.borderWidth / 2;
-        var y = itemGrabMenu.chestColorPicker.yPositionOnScreen + 16;
+        var y = chestColorPicker.yPositionOnScreen + 16;
         var mousePosition = Game1.getMousePosition();
         var (width, height) =
             ItemRegistry.GetData(chestForShow.QualifiedItemId).GetSourceRect().Size;
         var rect = new Rectangle(x, y - 32, width * 4, height * 4 - 32);
-        if (rect.Contains(mousePosition))
-        {
-            IClickableMenu.drawHoverText(Game1.spriteBatch, "更改名称", Game1.smallFont);
-        }
-
-        Monitor.LogOnce($"rect: {rect}, mouse: {mousePosition}", LogLevel.Alert);
+        return rect.Contains(mousePosition);
     }
 
     private void GameLoopOnSaveLoaded(object? sender, SaveLoadedEventArgs e)
     {
         _isOnHostComputer = Context.IsOnHostComputer;
-        _namesData = ReadName();
     }
 
     private void DisplayOnRenderingHud(object? sender, RenderingHudEventArgs e)
@@ -90,8 +120,8 @@ public class ModEntry : Mod
             overrideY = (int)(tile.Y + Utility.ModifyCoordinateForUIScale(32));
         }
 
-        var chestId = _currentChest.Value.GlobalInventoryId;
-        if (chestId != null && (_namesData?.NamePair.TryGetValue(chestId, out var chestName) ?? false))
+        var chestName = ReadName(_currentChest.Value);
+        if (chestName != null)
         {
             IClickableMenu.drawHoverText(
                 Game1.spriteBatch,
@@ -105,8 +135,7 @@ public class ModEntry : Mod
 
     private void OnDebugCommand(string name, string[] args)
     {
-        Monitor.Log($"Current Chest: {_currentChest.Value}", LogLevel.Alert);
-        Monitor.Log($"Current Chest Inventory: {_currentChest.Value?.netItems.Get()}", LogLevel.Alert);
+
     }
 
     private void GameLoopOnUpdateTicked(object? sender, UpdateTickedEventArgs e)
@@ -136,25 +165,16 @@ public class ModEntry : Mod
         }
     }
 
-    private void SaveName(NamesData model)
+    private void SaveName(IHaveModData sourceChest, string name)
     {
         if (_isOnHostComputer)
         {
-            Helper.Data.WriteSaveData(SaveKey, model);
-        }
-        else
-        {
-            Helper.Data.WriteJsonFile("data.json", model);
+            sourceChest.modData[$"{ModManifest.UniqueID}/chest_name"] = name;
         }
     }
 
-    private NamesData ReadName()
+    private string? ReadName(IHaveModData sourceChest)
     {
-        if (_isOnHostComputer)
-        {
-            return Helper.Data.ReadSaveData<NamesData>(SaveKey) ?? new NamesData();
-        }
-
-        return Helper.Data.ReadJsonFile<NamesData>("data.json") ?? new NamesData();
+        return sourceChest.modData.TryGetValue($"{ModManifest.UniqueID}/chest_name", out var name) ? name : null;
     }
 }
