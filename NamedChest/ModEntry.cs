@@ -40,7 +40,7 @@ public class ModEntry : Mod
             return;
         }
 
-        var sourceChest = (Chest) itemGrabMenu.sourceItem;
+        var sourceChest = Helper.Reflection.GetField<Chest>(itemGrabMenu, "sourceItem").GetValue();
 
         if (itemGrabMenu.chestColorPicker.itemToDrawColored is not Chest chestForShow)
         {
@@ -76,15 +76,15 @@ public class ModEntry : Mod
         }
     }
 
-    private static bool IsTouchedChest(IClickableMenu chestColorPicker, ISalable chestForShow)
+    private static bool IsTouchedChest(IClickableMenu chestColorPicker, Chest chestForShow)
     {
         var x = chestColorPicker.xPositionOnScreen + chestColorPicker.width +
                 IClickableMenu.borderWidth / 2;
         var y = chestColorPicker.yPositionOnScreen + 16;
         var mousePosition = Game1.getMousePosition();
         var (width, height) =
-            ItemRegistry.GetData(chestForShow.QualifiedItemId).GetSourceRect().Size;
-        var rect = new Rectangle(x, y - 32, width * 4, height * 4 - 32);
+            chestForShow.boundingBox.Value.Size;
+        var rect = new Rectangle(x, y - 32, width, height + 32);
         return rect.Contains(mousePosition);
     }
 
@@ -158,7 +158,7 @@ public class ModEntry : Mod
         }
     }
 
-    private void SaveName(IHaveModData sourceChest, string name)
+    private void SaveName(Chest sourceChest, string name)
     {
         if (_isOnHostComputer)
         {
@@ -166,7 +166,7 @@ public class ModEntry : Mod
         }
     }
 
-    private string? ReadName(IHaveModData sourceChest)
+    private string? ReadName(Chest sourceChest)
     {
         return sourceChest.modData.TryGetValue($"{ModManifest.UniqueID}/chest_name", out var name) ? name : null;
     }
